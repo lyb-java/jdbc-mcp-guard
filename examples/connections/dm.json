@@ -1,0 +1,13 @@
+{
+  "database": {
+    "dialect": "dm",
+    "host": "127.0.0.1",
+    "port": 5236,
+    "database": "APP",
+    "user": "SYSDBA",
+    "password": "REPLACE_ME",
+    "allowWrite": true,
+    "allowDdl": false,
+    "allowDestructive": false
+  }
+}

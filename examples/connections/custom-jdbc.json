@@ -1,0 +1,12 @@
+{
+  "database": {
+    "dialect": "custom",
+    "url": "jdbc:yourdb://127.0.0.1:9999/app",
+    "driverClass": "com.example.jdbc.Driver",
+    "driverJar": [
+      "/absolute/path/to/yourdb-jdbc.jar"
+    ],
+    "user": "app",
+    "password": "REPLACE_ME"
+  }
+}

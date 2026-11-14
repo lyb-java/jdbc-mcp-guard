@@ -1,0 +1,13 @@
+{
+  "database": {
+    "dialect": "mysql",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "database": "app",
+    "user": "app_reader",
+    "password": "REPLACE_ME",
+    "allowWrite": false,
+    "allowDdl": false,
+    "allowDestructive": false
+  }
+}

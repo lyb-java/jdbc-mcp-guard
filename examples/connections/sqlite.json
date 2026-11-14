@@ -1,0 +1,8 @@
+{
+  "database": {
+    "dialect": "sqlite",
+    "database": "./data/app.db",
+    "allowWrite": true,
+    "allowDdl": true
+  }
+}
