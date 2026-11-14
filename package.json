@@ -24,7 +24,8 @@
     "test": "node test/regress.js",
     "test:pack": "node test/pack-smoke.js",
     "build:java": "node scripts/build-java.js",
-    "prepublishOnly": "npm run build:java"
+    "prepublishOnly": "npm run build:java",
+    "selfcheck": "node scripts/selfcheck.js"
   },
   "engines": {
     "node": ">=20",

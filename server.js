@@ -262,7 +262,7 @@ async function resolveDriver(meta, settings, allowDownload) {
   // 3) 缓存目录：coords 全部就位才算完整（有的驱动需要伴随依赖 jar）
   const cacheFiles = spec.coords.map((c) => mavenRelative(c).file);
   const cachedJars = cacheFiles.map((f) => path.join(DRIVER_DIR, f));
-  if (cachedJars.every((p) => fs.existsSync(p))) return { jars: cachedJars, source: "缓存 db/drivers" };
+  if (cachedJars.every((p) => fs.existsSync(p))) return { jars: cachedJars, source: "本地缓存 $JMG_HOME/drivers" };
 
   // 4) 本机 ~/.m2（主驱动命中可直接用；伴随依赖若缺且允许下载则补齐，否则带上已缓存的）
   const m2 = findM2Jar(spec);
@@ -323,7 +323,7 @@ async function resolveDriver(meta, settings, allowDownload) {
     }
     if (!done) return { missing: true, reason: `驱动下载失败（${coords}）：${errors.join("; ")}` };
   }
-  return { jars, source: downloaded ? `自动下载 ${downloaded} 个 jar` : "缓存 db/drivers" };
+  return { jars, source: downloaded ? `自动下载 ${downloaded} 个 jar` : "本地缓存 $JMG_HOME/drivers" };
 }
 
 // ── 写操作守卫（db_execute 专用，默认关闭）──────────────────────────────────
@@ -768,7 +768,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "db_schema",
-      description: "查表结构（列名/类型/可空/注释），带 10 分钟本地缓存；支持达梦/MySQL/MSSQL/PG/Oracle/SQLite。比手写 information_schema 快且省 token。",
+      description: "查表结构（列名/类型/可空/注释），带 10 分钟本地缓存；支持达梦/MySQL/PG/MSSQL/Oracle/SQLite/DB2/ClickHouse/Trino(Presto)/H2。比手写 information_schema 快且省 token。",
       inputSchema: {
         type: "object",
         properties: {
