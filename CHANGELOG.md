@@ -12,5 +12,5 @@ Initial public release.
 - Audit log with rejected/dry-run/failed writes and size-based rotation.
 - JDBC driver auto-resolution: config → cache → `~/.m2` → Maven mirrors.
 - Pooled long-lived JVM fast path with one-shot fallback.
-- 15 driver families / 27 dialect aliases + arbitrary JDBC.
+- 11 driver families / 26 dialect aliases + arbitrary JDBC.
 - 50-assertion offline regression suite (SQLite + H2).

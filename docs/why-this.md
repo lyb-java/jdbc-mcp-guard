@@ -4,7 +4,7 @@ Because the existing options force a false choice.
 
 | Project | Write safety | Dialects | Dameng / domestic DBs |
 |---|---|---|---|
-| **jdbc-mcp-guard** | 4 tiers + WHERE guard + dry-run + maxAffected + audit | 15 driver families + any JDBC | ✅ |
+| **jdbc-mcp-guard** | 4 tiers + WHERE guard + dry-run + maxAffected + audit | 11 driver families + any JDBC | ✅ |
 | dbhub (bytebase) | read-only only | Go drivers: PG/MySQL/MSSQL/Oracle/SQLite | ❌ |
 | mcp-toolbox (Google) | tool allowlist, no SQL guard | 14+ dialects | ❌ |
 | postgres-mcp (crystaldba) | two tiers (restricted/unrestricted); restricted had a bypass advisory | PostgreSQL | ❌ |

@@ -25,7 +25,7 @@ Works with any JDBC driver: **Dameng (DM8), MySQL / MariaDB / TiDB / OceanBase /
 
 | | |
 |---|---|
-| **Any JDBC database** | 15 driver families / 27 dialect aliases + arbitrary JDBC via `url` + `driverClass` |
+| **Any JDBC database** | 11 driver families / 26 dialect aliases + arbitrary JDBC via `url` + `driverClass` |
 | **Zero driver setup** | drivers are resolved from the connection config, local cache, `~/.m2`, or downloaded from Maven Central |
 | **Tiered writes** | `allowWrite` (DML), `allowDdl` (DDL), `allowDestructive` (DROP / TRUNCATE / DROP COLUMN) — off by default |
 | **Two-phase DDL** | DDL is *statically validated* first (no execution), then committed with `confirm: "YES"` |
