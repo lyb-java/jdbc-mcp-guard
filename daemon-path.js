@@ -15,6 +15,7 @@ const os = require("os");
 const { runner } = require("./java-runner.js");
 
 const JMG_HOME = process.env.JMG_HOME || path.join(os.homedir(), ".jdbc-mcp-guard");
+const { bridgeJarPath } = require("./java-bridge.js");
 
 // 方言 → JDBC URL（复刻 DbQuery.java dialectSpec）
 const DIALECT_URLS = {
@@ -61,7 +62,7 @@ function target(meta, driver) {
     driver: jdbc.driver,
     user: db.user || "",
     password: db.password || "",
-    classpath: [path.join(JMG_HOME, "cache", "daemon-classes"), ...driver.jars].join(path.delimiter),
+    classpath: [bridgeJarPath() || path.join(JMG_HOME, "cache", "daemon-classes"), ...driver.jars].join(path.delimiter),
   };
 }
 

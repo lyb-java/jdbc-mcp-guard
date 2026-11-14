@@ -34,6 +34,7 @@ const crypto = require("crypto");
 const { tryDaemonQuery, tryDaemonWrite, poolStats } = require("./daemon-path.js");
 const { buildSchemaSql, buildSearchSql, cacheGet, cacheSet, cacheClear, keyOf } = require("./schema-cache.js");
 const { assertWriteSafe, classifyStatement, maskLiterals, FILE_IO } = require("./write-guard.js");
+const { bridgeJarPath } = require("./java-bridge.js");
 
 const HOME = os.homedir();
 const JMG_HOME = process.env.JMG_HOME || path.join(HOME, ".jdbc-mcp-guard");
@@ -414,6 +415,8 @@ function assertReadOnly(sql, dialect) {
 
 // ── DbQuery 编译（首次 javac，之后复用；无 JDK 直接报错并给出安装提示）──
 function compileClassSync() {
+  // 优先用预编译 jar（只需 JRE）；没有 jar 才回退到 javac 现场编译
+  if (bridgeJarPath()) return bridgeJarPath();
   const target = path.join(CLASS_CACHE, "DbQuery.class");
   try {
     if (fs.statSync(target).mtimeMs >= fs.statSync(JAVA_SRC).mtimeMs) return CLASS_CACHE;

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 — 2026-11-14
+
+- **Prebuilt JDBC bridge jar** (`db/jdbc-mcp-guard-bridge.jar`): runtime needs only a JRE — `javac` is no longer required unless you rebuild the bridge yourself.
+- Added `npm run build:java` (JDK 17+) and shared `java-bridge.js` helper.
+- Docs: clarified JRE/JDK requirements; added Claude Code CLI setup.
+
 ## 0.1.0 — 2026-11-14
 
 Initial public release.

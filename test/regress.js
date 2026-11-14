@@ -21,6 +21,7 @@ const DB_DIR = path.join(JMG_HOME, "connections");
 const TMP = os.tmpdir();
 const TAG = "dbq-regress-" + process.pid;
 const { maskLiterals } = require(path.join(__dirname, "..", "write-guard.js"));
+const { bridgeJarPath } = require(path.join(__dirname, "..", "java-bridge.js"));
 const DB_FILE = path.join(TMP, TAG + ".db");
 const CFG = path.join(DB_DIR, TAG + ".json");          // 连接文件必须放 connections/ 才会被发现
 const CFG_W = path.join(DB_DIR, TAG + "-w.json");
@@ -59,7 +60,8 @@ ensureDriverJars();
 // ── 预编译 DbQuery（直接 java 调用用来建表/插数；server 启动后也会复用同一 classes 目录）──
 const CLASS_DIR = path.join(JMG_HOME, "cache", "classes");
 fs.mkdirSync(CLASS_DIR, { recursive: true });
-{
+// 有预编译 jar 就不需要 JDK（只用 JRE 跑测试）
+if (!bridgeJarPath()) {
   const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "javac.exe") : "javac";
   try {
     execFileSync(javac, ["-encoding", "UTF-8", "-d", CLASS_DIR, path.join(__dirname, "..", "db", "DbQuery.java")], { stdio: "pipe", windowsHide: true, timeout: 120000 });
@@ -107,7 +109,7 @@ for (const f of fs.readdirSync(TMP)) {
 
 function javaArgs(extra) {
   const jars = ["sqlite-jdbc-3.46.1.0.jar", "slf4j-api-2.0.16.jar"].map((f) => path.join(DRIVER_DIR, f)).filter((p) => fs.existsSync(p));
-  return ["-Dfile.encoding=UTF-8", "-cp", [path.join(JMG_HOME, "cache", "classes"), ...jars].join(path.delimiter), "DbQuery", "--config", CFG, ...extra];
+  return ["-Dfile.encoding=UTF-8", "-cp", [bridgeJarPath() || path.join(JMG_HOME, "cache", "classes"), ...jars].join(path.delimiter), "DbQuery", "--config", CFG, ...extra];
 }
 function runJava(extra) {
   const out = { stdout: "", stderr: "" };

@@ -18,7 +18,7 @@
 
 ## 快速开始
 
-要求 **Node.js ≥ 20** 与 **JDK 17+**（数据库访问走一个小型 Java JDBC 桥）。
+要求 **Node.js ≥ 20** 与 **Java 17+ 运行时**（JRE 即可，`db/` 里自带预编译桥 jar）。只有想自己重建桥、或改了 `db/*.java` 时才需要 JDK（`npm run build:java`）。
 
 ```bash
 git clone <repo-url> jdbc-mcp-guard && cd jdbc-mcp-guard

@@ -36,7 +36,7 @@ Works with any JDBC driver: **Dameng (DM8), MySQL / MariaDB / TiDB / OceanBase /
 
 ## Quick start
 
-Requirements: **Node.js ≥ 20** and **JDK 17+** (the server talks to databases through a small Java JDBC bridge).
+Requirements: **Node.js ≥ 20** and **Java 17+**. A prebuilt JDBC bridge jar ships in `db/`, so a **JRE is enough** — a JDK is only needed if you rebuild the bridge (`npm run build:java`).
 
 ```bash
 git clone <repo-url> jdbc-mcp-guard
@@ -163,7 +163,7 @@ npm install
 npm test        # 50 assertions, SQLite + H2, no external database needed
 ```
 
-The regression suite spins up the MCP server over stdio, exercises every guard tier and cleans up after itself. It needs a JDK and downloads the SQLite/H2 drivers once (`$JMG_HOME/drivers`).
+The regression suite spins up the MCP server over stdio, exercises every guard tier and cleans up after itself. It uses the prebuilt bridge jar (no JDK needed) and downloads the SQLite/H2 drivers once (`$JMG_HOME/drivers`). Rebuild the bridge with `npm run build:java` (JDK 17+) after changing the Java sources.
 
 ## Limitations / roadmap
 

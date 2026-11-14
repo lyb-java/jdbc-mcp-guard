@@ -23,6 +23,7 @@ const path = require("path");
 const JMG_HOME = process.env.JMG_HOME || path.join(os.homedir(), ".jdbc-mcp-guard");
 const DAEMON_SRC = path.join(__dirname, "db", "DbQueryDaemon.java");
 const CLASS_CACHE = path.join(JMG_HOME, "cache", "daemon-classes");
+const { bridgeJarPath } = require("./java-bridge.js");
 const IDLE_KILL_MS = 10 * 60 * 1000;   // 每个 daemon 空闲 10 分钟回收
 const REQ_TIMEOUT_MS = 120000;          // 单请求协议级超时（必须 < MCP 的 toolCallTimeoutMs 130s）
 const MIN_REQ_TIMEOUT_MS = 30000;
@@ -33,6 +34,7 @@ const MAX_DAEMONS = (() => {
 })();
 // ── 编译缓存（所有 daemon 共用同一份 class）─────────────────────────────────
 function compileIfNeeded() {
+  if (bridgeJarPath()) return; // 预编译 jar 优先：运行时只需 JRE
   const target = path.join(CLASS_CACHE, "DbQueryDaemon.class");
   try {
     if (fs.statSync(target).mtimeMs >= fs.statSync(DAEMON_SRC).mtimeMs) return;
