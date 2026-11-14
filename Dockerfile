@@ -1,7 +1,10 @@
 # jdbc-mcp-guard — container image (Node.js + JRE, stdio MCP over `docker run -i`)
-FROM node:20-bookworm-slim
+# 可用 --build-arg NODE_IMAGE=<mirror>/library/node:20-bookworm-slim 指定镜像源
+ARG NODE_IMAGE=node:20-bookworm-slim
+FROM ${NODE_IMAGE}
 
-RUN apt-get update \
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list; \
+    apt-get update \
  && apt-get install -y --no-install-recommends openjdk-17-jre-headless \
  && rm -rf /var/lib/apt/lists/*
 

@@ -38,6 +38,13 @@ cd ~/jdbc-mcp-guard && npm install
 Then either rely on the `~/jdbc-mcp-guard` default, or set `JMG_PROJECT` to the
 checkout path (e.g. in the DSH process environment).
 
+Migrate that machine's connections and driver cache (idempotent, copy-only):
+
+~~~bash
+npm run migrate:from-dsh      # ~/.dsh/db -> ~/.jdbc-mcp-guard
+npm run selfcheck             # verify connections
+~~~
+
 ## Rollback
 
 The previous implementation is preserved in the DSH git history and, on the

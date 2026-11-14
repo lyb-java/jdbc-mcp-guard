@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 — 2026-11-14
+
+- `npm run migrate:from-dsh` — idempotent migration of connections and driver cache from the old DSH-bundled layout.
+- `npm run docker:smoke` — verifies the image over stdio (`docker run -i`) with a full MCP handshake.
+- Dockerfile: `ARG NODE_IMAGE` for registry mirrors; Debian apt mirror is configurable.
+- `docs/github-access.md`: per-machine SSH deploy key setup for networks that block github.com:443.
+
 ## 0.2.0 — 2026-11-14
 
 - **Schema coverage**: `db_schema` / `db_search_columns` now support **DB2** (`SYSCAT.COLUMNS`), **ClickHouse** (`system.columns`), **Trino/Presto** (`information_schema.columns`) and **H2** (`INFORMATION_SCHEMA`), bringing the total to 10 dialect families.
