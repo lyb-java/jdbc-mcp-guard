@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-11-14
+
+- **Schema coverage**: `db_schema` / `db_search_columns` now support **DB2** (`SYSCAT.COLUMNS`), **ClickHouse** (`system.columns`), **Trino/Presto** (`information_schema.columns`) and **H2** (`INFORMATION_SCHEMA`), bringing the total to 10 dialect families.
+- **Docker**: `Dockerfile` + `.dockerignore` + `docs/docker.md` (Node 20 + JRE 17 image, stdio over `docker run -i`).
+- **Packaged-install smoke test**: `npm run test:pack` — packs the tarball, installs it into a temp dir and verifies the MCP handshake and the six tools.
+- `npm pack` file list fixed (java-bridge.js was missing from the published package).
+- Regression suite: **55 assertions**.
+
 ## 0.1.1 — 2026-11-14
 
 - **Prebuilt JDBC bridge jar** (`db/jdbc-mcp-guard-bridge.jar`): runtime needs only a JRE — `javac` is no longer required unless you rebuild the bridge yourself.

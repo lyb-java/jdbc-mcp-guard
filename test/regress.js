@@ -258,6 +258,16 @@ const isErr = (r) => Boolean(r.result?.isError) || /✗|拒绝|失败|未知连�
   check("MySQL 族列搜索带 TABLE_SCHEMA", /TABLE_SCHEMA = 'demo'/.test(mySearch), mySearch.slice(0, 140));
   check("PG 族别名 kingbase 可用", /table_schema = 'demo'/.test(buildSchemaSql({ dialect: "kingbase", database: "demo" }, "t1").sql), "");
   check("MSSQL 别名 sqlserver 可用", /TABLE_SCHEMA = 'DEMO'/.test(buildSchemaSql({ dialect: "sqlserver", database: "demo" }, "t1").sql), "");
+  // v0.2：补 DB2 / ClickHouse / Trino(Presto) / H2 的 schema + 列搜索
+  const db2Schema = buildSchemaSql({ dialect: "db2", database: "demo" }, "t1").sql;
+  check("DB2 schema SQL（SYSCAT.COLUMNS）", /SYSCAT\.COLUMNS/.test(db2Schema) && /TABSCHEMA = 'DEMO'/.test(db2Schema), db2Schema.slice(0, 140));
+  const chSchema = buildSchemaSql({ dialect: "clickhouse", database: "demo" }, "t1").sql;
+  check("ClickHouse schema SQL（system.columns）", /system\.columns/.test(chSchema) && /database = 'demo'/.test(chSchema), chSchema.slice(0, 140));
+  const trinoSchema = buildSchemaSql({ dialect: "presto", database: "demo" }, "t1").sql;
+  check("Trino/Presto schema SQL（information_schema）", /information_schema\.columns/.test(trinoSchema) && /table_schema = 'demo'/.test(trinoSchema), trinoSchema.slice(0, 140));
+  const h2Schema = buildSchemaSql({ dialect: "h2", database: "demo" }, "t1").sql;
+  check("H2 schema SQL（INFORMATION_SCHEMA）", /INFORMATION_SCHEMA\.COLUMNS/.test(h2Schema) && /TABLE_SCHEMA = 'DEMO'/.test(h2Schema), h2Schema.slice(0, 140));
+  check("DB2 列搜索可用", /SYSCAT\.COLUMNS/.test(buildSearchSql({ dialect: "db2", database: "demo" }, "col").sql), "");
 
   console.log("== 只读守卫 ==");
   const w = await call(12, "db_query", { sql: "UPDATE t1 SET v = 1 WHERE id = 1", connection: TAG });

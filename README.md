@@ -32,7 +32,7 @@ Works with any JDBC driver: **Dameng (DM8), MySQL / MariaDB / TiDB / OceanBase /
 | **Row-count guard** | writes affecting more than `maxAffected` rows (default 1000) are rolled back automatically |
 | **Audit** | `$JMG_HOME/audit.jsonl`, includes dry-run, rejected and failed attempts; size-based rotation |
 | **Fast path** | pooled long-lived JVM per driver classpath (milliseconds after the first query); falls back to a one-shot process if a driver misbehaves |
-| **Schema tools** | `db_schema` / `db_search_columns` for DM, MySQL, PostgreSQL, SQL Server, Oracle, SQLite; cached for 10 minutes (invalidated after DDL) |
+| **Schema tools** | `db_schema` / `db_search_columns` for DM, MySQL, PostgreSQL, SQL Server, Oracle, SQLite, DB2, ClickHouse, Trino/Presto, H2; cached for 10 minutes (invalidated after DDL) |
 
 ## Quick start
 
@@ -88,7 +88,16 @@ It speaks MCP over stdio, so you normally register it in your client instead:
 }
 ```
 
-See [examples/](examples/) for more connection templates (MySQL, DM8, Oracle, custom JDBC) and [docs/mcp-clients.md](docs/mcp-clients.md) for Claude Desktop / Cursor / generic stdio configs.
+See [examples/](examples/) for more connection templates (MySQL, DM8, Oracle, custom JDBC) and [docs/mcp-clients.md](docs/mcp-clients.md) for Claude Desktop / Cursor / Claude Code / generic stdio configs.
+
+### Install options
+
+| Option | Command |
+|---|---|
+| From source | `git clone … && npm install` (above) |
+| Docker | `docker build -t jdbc-mcp-guard .` then `docker run -i --rm -v ~/.jdbc-mcp-guard:/data jdbc-mcp-guard` — see [docs/docker.md](docs/docker.md) |
+| npm (once published) | `npm i -g jdbc-mcp-guard` / `npx jdbc-mcp-guard` |
+| Verify the package | `npm run test:pack` (packs, installs into a temp dir and checks the MCP handshake) |
 
 ## Tools
 
@@ -169,7 +178,7 @@ The regression suite spins up the MCP server over stdio, exercises every guard t
 
 - The write guard is a **lexer-level** checker (comments/literals masked, statement classification) — not a full SQL parser. Do not treat it as a substitute for database-side permissions.
 - Error messages are currently Chinese; English localization is planned.
-- Schema tools cover six dialect families; other dialects can still be queried with `db_query` (`information_schema` etc.).
+- Schema tools cover ten dialect families (DM, MySQL, PostgreSQL, SQL Server, Oracle, SQLite, DB2, ClickHouse, Trino/Presto, H2); any other JDBC database can still be queried with `db_query` (`information_schema` etc.).
 - stdio transport only; HTTP/SSE transport and multi-tenant auth are on the roadmap.
 - `--force`-style escape hatches are intentionally absent: if a write is rejected, fix the SQL or the account permissions.
 

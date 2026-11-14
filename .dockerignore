@@ -1,0 +1,9 @@
+node_modules
+.git
+.github
+test
+*.zip
+*.tgz
+cache
+drivers
+audit*.jsonl

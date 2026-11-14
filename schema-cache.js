@@ -30,6 +30,10 @@ const DIALECT_FAMILY = {
   mssql: "mssql", sqlserver: "mssql",
   oracle: "oracle",
   sqlite: "sqlite", sqlite3: "sqlite",
+  db2: "db2",
+  clickhouse: "clickhouse",
+  trino: "trino", presto: "trino",
+  h2: "h2",
 };
 
 function familyOf(dialect) {
@@ -109,6 +113,44 @@ function buildSchemaSql(meta, table, schema) {
         `'' AS REMARK FROM pragma_table_info('${q(rawTable)}') ORDER BY cid`,
     };
   }
+  if (fam === "db2") {
+    const t = q(rawTable.toUpperCase());
+    const sc = q(rawSchema.toUpperCase());
+    return {
+      sql:
+        "SELECT COLNAME AS NAME, TYPENAME AS TYPE, " +
+        "CASE WHEN NULLS = 'Y' THEN 'YES' ELSE 'NO' END AS NULLABLE, " +
+        "COALESCE(REMARKS, '') AS REMARK FROM SYSCAT.COLUMNS " +
+        `WHERE TABNAME = '${t}' AND TABSCHEMA = '${sc}' ORDER BY COLNO`,
+    };
+  }
+  if (fam === "clickhouse") {
+    const t = q(rawTable);
+    const sc = q(rawSchema);
+    return {
+      sql:
+        "SELECT name AS NAME, type AS TYPE, 'YES' AS NULLABLE, COALESCE(comment, '') AS REMARK " +
+        `FROM system.columns WHERE table = '${t}' AND database = '${sc}' ORDER BY position`,
+    };
+  }
+  if (fam === "trino") {
+    const t = q(rawTable.toLowerCase());
+    const sc = q(rawSchema);
+    return {
+      sql:
+        "SELECT column_name AS NAME, data_type AS TYPE, is_nullable AS NULLABLE, COALESCE(comment, '') AS REMARK " +
+        `FROM information_schema.columns WHERE table_name = '${t}' AND table_schema = '${sc}' ORDER BY ordinal_position`,
+    };
+  }
+  if (fam === "h2") {
+    const t = q(rawTable.toUpperCase());
+    const sc = q(rawSchema.toUpperCase());
+    return {
+      sql:
+        "SELECT COLUMN_NAME AS NAME, DATA_TYPE AS TYPE, IS_NULLABLE AS NULLABLE, COALESCE(REMARKS, '') AS REMARK " +
+        `FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '${t}' AND TABLE_SCHEMA = '${sc}' ORDER BY ORDINAL_POSITION`,
+    };
+  }
   return null;
 }
 
@@ -139,6 +181,22 @@ function buildSearchSql(meta, keyword, schema) {
   }
   if (fam === "sqlite") {
     return { sql: `SELECT name AS TAB, '' AS COL, sql AS TYPE FROM sqlite_master WHERE type='table' AND UPPER(sql) LIKE '%${k}%' ORDER BY name` };
+  }
+  if (fam === "db2") {
+    const sc = q(rawSchema.toUpperCase());
+    return { sql: `SELECT TABNAME AS TAB, COLNAME AS COL, TYPENAME AS TYPE FROM SYSCAT.COLUMNS WHERE UPPER(COLNAME) LIKE '%${k}%' AND TABSCHEMA = '${sc}' ORDER BY TABNAME, COLNO` };
+  }
+  if (fam === "clickhouse") {
+    const sc = q(rawSchema);
+    return { sql: `SELECT table AS TAB, name AS COL, type AS TYPE FROM system.columns WHERE UPPER(name) LIKE '%${k}%' AND database = '${sc}' ORDER BY table, position` };
+  }
+  if (fam === "trino") {
+    const sc = q(rawSchema);
+    return { sql: `SELECT table_name AS tab, column_name AS col, data_type AS type FROM information_schema.columns WHERE UPPER(column_name) LIKE '%${k}%' AND table_schema = '${sc}' ORDER BY table_name, ordinal_position` };
+  }
+  if (fam === "h2") {
+    const sc = q(rawSchema.toUpperCase());
+    return { sql: `SELECT TABLE_NAME AS TAB, COLUMN_NAME AS COL, DATA_TYPE AS TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(COLUMN_NAME) LIKE '%${k}%' AND TABLE_SCHEMA = '${sc}' ORDER BY TABLE_NAME, ORDINAL_POSITION` };
   }
   return null;
 }

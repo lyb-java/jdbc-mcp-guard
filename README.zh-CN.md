@@ -66,7 +66,7 @@ MCP 客户端配置：
 | `db_execute` | 分级写入；默认预演（执行后回滚），`confirm:"YES"` 提交；必须带 `reason`（≥6 字）并写入审计 |
 | `db_connections` | 列出连接、目标与写权限 |
 | `db_dialects` | 方言/驱动映射与常驻 JVM 池 |
-| `db_schema` | 表结构（达梦/MySQL/PG/MSSQL/Oracle/SQLite） |
+| `db_schema` | 表结构（达梦/MySQL/PG/MSSQL/Oracle/SQLite/DB2/ClickHouse/Trino/Presto/H2） |
 | `db_search_columns` | 按列名找表（同上六族） |
 
 ## 安全模型
@@ -99,7 +99,7 @@ npm test    # 50 项断言，SQLite + H2，不需要外部数据库
 
 - 词法级守卫，不做完整 SQL 解析；不要拿它替代数据库权限；
 - 错误文案目前中文，英文 i18n 在路线图里；
-- schema 工具覆盖六族方言，其他方言用 `db_query` 查元数据；
+- schema 工具覆盖十族方言，其他方言用 `db_query` 查元数据；
 - 仅 stdio 传输；HTTP/SSE 与多租户鉴权在路线图里。
 
 ## 许可
