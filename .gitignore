@@ -1,0 +1,14 @@
+node_modules/
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db
+
+# runtime data — never commit
+/drivers/
+/cache/
+audit*.jsonl
+*.db
+*.sqlite
+.env
+AGENTS.local.md

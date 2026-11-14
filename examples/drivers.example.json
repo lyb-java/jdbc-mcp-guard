@@ -1,0 +1,9 @@
+{
+  "repos": [
+    "https://maven.aliyun.com/repository/public",
+    "https://repo1.maven.org/maven2"
+  ],
+  "aliases": {
+    "mysql": "com.mysql:mysql-connector-j:9.1.0"
+  }
+}
