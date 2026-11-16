@@ -1021,7 +1021,12 @@ async function run() {
   await server.connect(new StdioServerTransport());
 }
 
-run().catch((err) => {
-  process.stderr.write(`db-query MCP 致命错误: ${err.message}\n`);
-  process.exit(1);
-});
+if (require.main === module) {
+  run().catch((err) => {
+    process.stderr.write('db-query MCP 致命错误: ' + err.message + '\n');
+    process.exit(1);
+  });
+}
+
+// CLI（cli.js）复用同一套查询/写入/守卫/审计实现
+module.exports = { run, runQuery, runWrite, listConnections, resolveConnection, auditNote };

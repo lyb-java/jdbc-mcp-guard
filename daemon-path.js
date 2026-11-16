@@ -96,7 +96,12 @@ function renderJson(headers, rows) {
 }
 
 // ── 对外 API ────────────────────────────────────────────────────────────────
+function daemonDisabled() {
+  return process.env.JMG_NO_DAEMON === "1";
+}
+
 async function tryDaemonQuery(meta, driver, { sql, sqls, maxRows, timeout, format }) {
+  if (daemonDisabled()) return null;
   const t = target(meta, driver);
   if (!t) return null;
   const list = sqls && sqls.length ? sqls : [sql];
@@ -124,6 +129,7 @@ async function tryDaemonQuery(meta, driver, { sql, sqls, maxRows, timeout, forma
 }
 
 async function tryDaemonWrite(meta, driver, { sql, dryRun, maxAffected, timeout }) {
+  if (daemonDisabled()) return null;
   const t = target(meta, driver);
   if (!t) return null;
   let r;

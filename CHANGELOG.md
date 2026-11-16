@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 — 2026-11-16
+
+- **CLI**: `jdbc-mcp-guard query|exec|connections` reuses the exact same guards, permission tiers and audit as the MCP server — for agents without MCP support and for humans. Writes still require `--reason` and default to dry-run.
+- `JMG_NO_DAEMON=1` runs everything through the one-shot JVM path (clean exit, no background daemon).
+- Offline CLI regression (`npm run test:cli`, 5 assertions).
+
 ## 0.2.1 — 2026-11-14
 
 - `npm run migrate:from-dsh` — idempotent migration of connections and driver cache from the old DSH-bundled layout.

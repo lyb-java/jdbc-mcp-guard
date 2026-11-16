@@ -1,14 +1,15 @@
 {
   "name": "jdbc-mcp-guard",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "MCP gateway for any JDBC database: read-only queries, tiered writes (DML / DDL / destructive), full audit. Works with DM, MySQL, PostgreSQL, Oracle, SQL Server, Kingbase, openGauss, OceanBase, ClickHouse, DB2 and any JDBC driver.",
   "license": "MIT",
   "type": "commonjs",
   "main": "server.js",
   "bin": {
-    "jdbc-mcp-guard": "server.js"
+    "jdbc-mcp-guard": "cli.js"
   },
   "files": [
+    "cli.js",
     "server.js",
     "write-guard.js",
     "java-runner.js",
@@ -27,7 +28,8 @@
     "prepublishOnly": "npm run build:java",
     "selfcheck": "node scripts/selfcheck.js",
     "migrate:from-dsh": "node scripts/migrate-from-dsh.js",
-    "docker:smoke": "node scripts/docker-smoke.js"
+    "docker:smoke": "node scripts/docker-smoke.js",
+    "test:cli": "node test/cli.js"
   },
   "engines": {
     "node": ">=20",

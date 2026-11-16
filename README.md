@@ -110,6 +110,25 @@ See [examples/](examples/) for more connection templates (MySQL, DM8, Oracle, cu
 | `db_schema` | Table columns / types / nullability / comments (DM, MySQL, PG, MSSQL, Oracle, SQLite). |
 | `db_search_columns` | Find which table contains a column name (same six families). |
 
+## CLI (for agents without MCP, or for humans)
+
+Every safety rule is enforced in the same code path — the CLI is not a bypass.
+
+~~~bash
+# list connections
+npx jdbc-mcp-guard connections
+
+# read-only query
+npx jdbc-mcp-guard query --conn default --sql "SELECT * FROM users LIMIT 5"
+
+# write: dry-run first (default), then commit
+npx jdbc-mcp-guard exec --conn app --sql "UPDATE t SET x=1 WHERE id=2" --reason "fix bad row"
+npx jdbc-mcp-guard exec --conn app --sql "UPDATE t SET x=1 WHERE id=2" --reason "fix bad row" --confirm YES
+~~~
+
+Writes still require `--reason` (>=6 chars), still obey the tiered permissions, and are still audited.
+The CLI defaults to a one-shot JVM so it exits cleanly; set `JMG_NO_DAEMON=0` to keep the pooled daemon.
+
 ## Permission model
 
 Everything is **off by default**. Permissions live in the connection file:
