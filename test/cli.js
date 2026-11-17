@@ -72,6 +72,12 @@ try {
 
   const cs = run(["connections"]);
   check("connections 列出连接", cs.code === 0 && cs.out.includes("cli:"), cs.out);
+
+  const alias = run(["query", "--connection", "cli", "--sql", "SELECT 2 AS ok"]);
+  check("--connection 别名可用", alias.code === 0 && /(^|\D)2(\D|$)/.test(alias.out), alias.out);
+
+  const unk = run(["query", "--conn", "cli", "--sql", "SELECT 1", "--bogus", "x"]);
+  check("未知参数被拒", unk.code === 2 && /未知参数/.test(unk.out), unk.out);
 } finally {
   try { fs.rmSync(HOME, { recursive: true, force: true }); } catch {}
 }

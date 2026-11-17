@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 — 2026-11-17
+
+- **Fix**: `serverInfo` now reports `jdbc-mcp-guard` and the real package version (was `db-query` / `2.1.0`, leaking the old DSH incarnation).
+- **Fix**: CLI accepts `--connection` as an alias of `--conn`; unknown flags are now rejected (exit code 2) instead of being silently ignored and falling back to `default`.
+- **Fix**: the DSH-side shim must call `run()` explicitly since 0.3.0 added a `require.main` guard — the shim is updated accordingly; `db-query` MCP no longer exits silently.
+- Offline CLI regression extended to 7 assertions.
+
 ## 0.3.0 — 2026-11-16
 
 - **CLI**: `jdbc-mcp-guard query|exec|connections` reuses the exact same guards, permission tiers and audit as the MCP server — for agents without MCP support and for humans. Writes still require `--reason` and default to dry-run.

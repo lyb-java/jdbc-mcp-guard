@@ -728,7 +728,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
 }
 
 // ── MCP 服务 ─────────────────────────────────────────────────────────────────
-const server = new Server({ name: "db-query", version: "2.1.0" }, { capabilities: { tools: {} } });
+const server = new Server({ name: "jdbc-mcp-guard", version: require("./package.json").version }, { capabilities: { tools: {} } });
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [

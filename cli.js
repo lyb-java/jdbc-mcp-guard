@@ -20,7 +20,7 @@ function usage() {
     "  jdbc-mcp-guard                      启动 MCP stdio server",
     "  jdbc-mcp-guard connections          列出连接与写权限",
     '  jdbc-mcp-guard query --sql "..."    只读查询（--file <path> 从文件读）',
-    "                  [--conn default] [--format table|json] [--max-rows 200] [--timeout 30]",
+    "                  [--conn X]（别名 --connection） [--format table|json] [--max-rows 200] [--timeout 30]",
     '  jdbc-mcp-guard exec  --sql "..." --reason "..."   写操作（默认预演）',
     "                  [--conn X] [--confirm YES] [--max-affected 1000] [--timeout 120]",
     "",
@@ -87,7 +87,22 @@ function render(res) {
   let sql = typeof opts.sql === "string" ? opts.sql : "";
   if (!sql && typeof opts.file === "string") sql = fs.readFileSync(path.resolve(opts.file), "utf8");
   if (!sql || !sql.trim()) fail("缺少 --sql 或 --file", 2);
-  const connection = typeof opts.conn === "string" ? opts.conn : "default";
+  const connection =
+    typeof opts.conn === "string"
+      ? opts.conn
+      : typeof opts.connection === "string"
+        ? opts.connection
+        : "default";
+  const allowed =
+    cmd === "query"
+      ? ["sql", "file", "conn", "connection", "format", "max-rows", "timeout"]
+      : ["sql", "file", "conn", "connection", "reason", "confirm", "max-affected", "timeout"];
+  const unknown = Object.keys(opts).filter((k) => k !== "_" && !allowed.includes(k));
+  if (unknown.length)
+    fail(
+      "未知参数 " + unknown.map((k) => "--" + k).join(", ") + "；" + cmd + " 可用参数：" + allowed.map((k) => "--" + k).join(" "),
+      2
+    );
 
   if (cmd === "query") {
     const { runQuery } = require("./server.js");
