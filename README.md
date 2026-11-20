@@ -232,7 +232,7 @@ Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/rele
 - The write guard is a **lexer-level** checker (comments/literals masked, statement classification) — not a full SQL parser. Do not treat it as a substitute for database-side permissions.
 - Error messages are currently Chinese; English localization is planned.
 - Schema tools cover ten dialect families (DM, MySQL, PostgreSQL, SQL Server, Oracle, SQLite, DB2, ClickHouse, Trino/Presto, H2); any other JDBC database can still be queried with `db_query` (`information_schema` etc.).
-- `db_indexes` covers SQLite / MySQL / PG / DM / Oracle / SQL Server / DB2 / ClickHouse; Trino and H2 expose no index metadata. `db_explain` needs a manual two-step for Oracle / SQL Server / DB2.
+- `db_indexes` covers SQLite / MySQL / PG / DM / Oracle / SQL Server / DB2 / ClickHouse; Trino and H2 expose no index metadata. `db_explain` needs a manual two-step for Oracle / SQL Server / DB2. CI exercises SQLite only — the other dialects follow the same catalog conventions but are not covered by automated tests.
 - stdio transport only; HTTP/SSE transport and multi-tenant auth are on the roadmap.
 - `--force`-style escape hatches are intentionally absent: if a write is rejected, fix the SQL or the account permissions.
 
