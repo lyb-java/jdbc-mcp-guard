@@ -204,7 +204,7 @@ function downloadTo(url, dest, depth = 0, opts = {}) {
               return reject(new Error(`sha256 校验失败（${path.basename(dest)}）：期望 ${expected}，实际 ${sha256}`));
             }
             if (!expected) {
-              process.stderr.write("[db-query] 驱动 " + path.basename(dest) + " 下载完成 sha256=" + sha256 + "（drivers.json 未配置 checksums，跳过校验）\n");
+              process.stderr.write("[jdbc-mcp-guard] 驱动 " + path.basename(dest) + " 下载完成 sha256=" + sha256 + "（drivers.json 未配置 checksums，跳过校验）\n");
             }
             fs.renameSync(tmp, dest);
             resolve(dest);
@@ -375,7 +375,7 @@ function auditLog(record) {
   } catch (error) {
     lastAuditError = String((error && error.message) || error);
     try {
-      process.stderr.write("[db-query] 审计写入失败 " + AUDIT_FILE + "：" + lastAuditError + "\n");
+      process.stderr.write("[jdbc-mcp-guard] 审计写入失败 " + AUDIT_FILE + "：" + lastAuditError + "\n");
     } catch {
       /* stderr 也写不了时只剩内存标志 */
     }
@@ -648,7 +648,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
       cacheClear(verdict.kind === "destructive" ? undefined : conn.name);
     }
     if (fast.aborted) return { isError: true, content: [{ type: "text", text: `${whead}\n影响行数超过上限 ${wCap}，已自动回滚，未落库。请缩小 WHERE 范围或显式调大 maxAffected。${auditNote()}` }] };
-    return { content: [{ type: "text", text: `${whead}\n${fast.committed ? "已提交。审计已记录到 db/_audit.jsonl。" : "预演：真实提交请再调用一次并传 confirm=YES。"} ${auditNote()}` }] };
+    return { content: [{ type: "text", text: `${whead}\n${fast.committed ? "已提交。审计已写入 $JMG_HOME/audit.jsonl。" : "预演：真实提交请再调用一次并传 confirm=YES。"} ${auditNote()}` }] };
   }
   // fast === null：走一次性进程
 
@@ -720,7 +720,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
         return;
       }
       const tail = committed
-        ? "已提交。审计已记录到 db/_audit.jsonl。"
+        ? "已提交。审计已写入 $JMG_HOME/audit.jsonl。"
         : `预演：真实提交请再调用一次并传 confirm="YES"。`;
       resolve({ content: [{ type: "text", text: `${head}\n${tail}${auditNote()}` }] });
     });
@@ -1023,7 +1023,7 @@ async function run() {
 
 if (require.main === module) {
   run().catch((err) => {
-    process.stderr.write('db-query MCP 致命错误: ' + err.message + '\n');
+    process.stderr.write('jdbc-mcp-guard 致命错误: ' + err.message + '\n');
     process.exit(1);
   });
 }

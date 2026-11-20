@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 — 2026-11-20
+
+- **Fix**: first-run logs no longer print `[db-query]` — the rebrand is complete in driver, audit and fatal-error messages.
+- **Fix**: the commit message points at the real `$JMG_HOME/audit.jsonl` instead of a non-existent `db/_audit.jsonl`.
+- **Release automation**: `.github/workflows/release.yml` — on a `v*` tag: tests → GitHub Release (npm tarball) → `npm publish --provenance` → `ghcr.io/lyb-java/jdbc-mcp-guard`.
+- **MCP Registry**: `server.json` plus `mcpName` in `package.json`, with the publish/verify flow in `docs/publishing.md`.
+- Docs: README gains a 30-second demo, badges and a release section.
+
 ## 0.3.1 — 2026-11-17
 
 - **Fix**: `serverInfo` now reports `jdbc-mcp-guard` and the real package version (was `db-query` / `2.1.0`, leaking the old DSH incarnation).

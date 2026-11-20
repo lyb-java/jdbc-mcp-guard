@@ -1,10 +1,37 @@
 # jdbc-mcp-guard
 
+[![CI](https://github.com/lyb-java/jdbc-mcp-guard/actions/workflows/ci.yml/badge.svg)](https://github.com/lyb-java/jdbc-mcp-guard/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen.svg)
+![Java](https://img.shields.io/badge/java-%E2%89%A517-orange.svg)
+
 **给任意 JDBC 数据库的安全写入口，走 MCP。**
 
 让 AI 能查、也能**安全地改**数据库：四级写权限、显式 confirm、超量自动回滚、全量审计。驱动自动解析，支持达梦 DM8、MySQL 协议族、PostgreSQL 协议族、SQL Server、Oracle、SQLite、DB2、ClickHouse 等，也支持任意 JDBC（`url` + `driverClass`）。
 
 > 现有数据库 MCP 大多走两个极端：只读（安全但干不了活）或不设限（能干但一发不可收拾）。这个项目做中间那条线：**允许写，但绝不盲写。**
+
+## 30 秒看懂
+
+```bash
+npm i -g jdbc-mcp-guard          # 或 npx jdbc-mcp-guard
+
+# 1) 不带 WHERE 的写：在碰到数据库之前就被拒绝
+$ jdbc-mcp-guard exec --conn demo --sql "UPDATE tasks SET done=1" --reason "批量修复"
+✗ 写守卫拒绝：UPDATE 必须带 WHERE 条件（禁止全表操作）。
+
+# 2) 同样的语句加上 WHERE：预演（执行 → 计数 → 回滚）
+$ jdbc-mcp-guard exec --conn demo --sql "UPDATE tasks SET done=1 WHERE id>0" --reason "批量修复"
+[demo · 影响 3 行 · 预演未提交 · 上限 1000]
+预演：真实提交请再调用一次并传 confirm="YES"。
+
+# 3) 提交：同一套守卫，落库并写审计
+$ jdbc-mcp-guard exec --conn demo --sql "UPDATE tasks SET done=1 WHERE id>0" --reason "批量修复" --confirm YES
+[demo · 影响 3 行 · 已提交 · 上限 1000]
+已提交。审计已写入 $JMG_HOME/audit.jsonl。
+```
+
+CLI、MCP 工具和 `--confirm` 走同一份守卫（`write-guard.js`）与同一份审计，没有第二条代码路径。上面是一次 SQLite 演示的真实输出。
 
 ## 核心能力
 
@@ -92,7 +119,7 @@ MCP 客户端配置：
 
 ```bash
 npm install
-npm test    # 50 项断言，SQLite + H2，不需要外部数据库
+npm test    # 55 项断言，SQLite + H2，不需要外部数据库
 ```
 
 ## 限制
