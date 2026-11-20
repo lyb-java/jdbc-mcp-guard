@@ -15,7 +15,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 
 const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "javac.exe" : "javac") : "javac";
-const jar = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "jar.exe") : "jar";
+const jar = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "jar.exe" : "jar") : "jar";
 const srcs = [path.join(root, "db", "DbQuery.java"), path.join(root, "db", "DbQueryDaemon.java")];
 
 execFileSync(javac, ["-encoding", "UTF-8", "--release", "17", "-d", out, ...srcs], { stdio: "inherit" });
