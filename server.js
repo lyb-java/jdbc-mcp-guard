@@ -428,7 +428,7 @@ function compileClassSync() {
     throw new Error(`找不到查询器源码：${JAVA_SRC}`);
   }
   fs.mkdirSync(CLASS_CACHE, { recursive: true });
-  const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "javac.exe") : "javac";
+  const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "javac.exe" : "javac") : "javac";
   try {
     execFileSync(javac, ["-encoding", "UTF-8", "-d", CLASS_CACHE, JAVA_SRC], { stdio: "pipe", windowsHide: true, timeout: 60000 });
     return CLASS_CACHE;

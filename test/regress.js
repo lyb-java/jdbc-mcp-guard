@@ -62,7 +62,7 @@ const CLASS_DIR = path.join(JMG_HOME, "cache", "classes");
 fs.mkdirSync(CLASS_DIR, { recursive: true });
 // 有预编译 jar 就不需要 JDK（只用 JRE 跑测试）
 if (!bridgeJarPath()) {
-  const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "javac.exe") : "javac";
+  const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "javac.exe" : "javac") : "javac";
   try {
     execFileSync(javac, ["-encoding", "UTF-8", "-d", CLASS_DIR, path.join(__dirname, "..", "db", "DbQuery.java")], { stdio: "pipe", windowsHide: true, timeout: 120000 });
   } catch (e) {
