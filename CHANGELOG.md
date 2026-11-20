@@ -2,6 +2,7 @@
 
 ## 0.4.0 — 2026-11-20
 
+- **Fix (live-tested against DM8 / MySQL / SQL Server)**: DM rejected the `REF` alias (renamed to `REF_TABLE`); SQL Server `db_schema` failed on `sql_variant` (`MS_Description` is now cast to `nvarchar(4000)`); dialect errors are no longer cached for 10 minutes; DM `db_explain` returns an explicit explanation instead of an empty plan.
 - **New**: `db_indexes` — primary / unique / foreign keys and indexes, one row per column (SQLite, MySQL, PG, DM, Oracle, MSSQL, DB2, ClickHouse).
 - **New**: `db_explain` — dialect-aware execution plan for a read-only statement; refuses DML/DDL and never adds `ANALYZE`.
 - **Security**: the audit `sqlPreview` now masks string literals (`'?'`), so phone numbers / IDs / passwords written in SQL values no longer land in `audit.jsonl`.

@@ -127,6 +127,8 @@ npm test    # 61 项断言，SQLite + H2，不需要外部数据库
 
 ## 限制
 
+- `db_explain`：达梦 JDBC 下 EXPLAIN 不返回结果集，Oracle/SQL Server/DB2 需两步；请用数据库自带工具查看。
+
 - 词法级守卫，不做完整 SQL 解析；不要拿它替代数据库权限；
 - 错误文案目前中文，英文 i18n 在路线图里；
 - schema 工具覆盖十族方言，其他方言用 `db_query` 查元数据；

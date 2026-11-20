@@ -75,7 +75,7 @@ function buildSchemaSql(meta, table, schema) {
     return {
       sql:
         "SELECT c.COLUMN_NAME AS NAME, c.DATA_TYPE AS TYPE, c.IS_NULLABLE AS NULLABLE, " +
-        "COALESCE(ep.value, '') AS REMARK FROM INFORMATION_SCHEMA.COLUMNS c " +
+        "COALESCE(CAST(ep.value AS NVARCHAR(4000)), '') AS REMARK FROM INFORMATION_SCHEMA.COLUMNS c " +
         "LEFT JOIN sys.extended_properties ep ON ep.major_id = OBJECT_ID(c.TABLE_NAME) " +
         "AND ep.minor_id = c.ORDINAL_POSITION AND ep.name = 'MS_Description' " +
         `WHERE c.TABLE_NAME = '${t}' AND c.TABLE_SCHEMA = '${sc}' ORDER BY c.ORDINAL_POSITION`,

@@ -31,13 +31,13 @@ function buildIndexSql(meta, table, schema) {
     return {
       sql:
         "SELECT il.name AS NAME, CASE WHEN il.origin='pk' THEN 'PRIMARY' WHEN il.\"unique\"=1 THEN 'UNIQUE' ELSE 'INDEX' END AS KIND, " +
-        "ii.name AS COL, '' AS REF, ii.seqno+1 AS SEQ " +
+        "ii.name AS COL, '' AS REF_TABLE, ii.seqno+1 AS SEQ " +
         `FROM pragma_index_list('${tt}') il JOIN pragma_index_info(il.name) ii ` +
         "UNION ALL " +
-        "SELECT 'PRIMARY' AS NAME, 'PRIMARY' AS KIND, name AS COL, '' AS REF, pk AS SEQ " +
+        "SELECT 'PRIMARY' AS NAME, 'PRIMARY' AS KIND, name AS COL, '' AS REF_TABLE, pk AS SEQ " +
         `FROM pragma_table_info('${tt}') WHERE pk > 0 AND NOT EXISTS (SELECT 1 FROM pragma_index_list('${tt}') x WHERE x.origin='pk') ` +
         "UNION ALL " +
-        "SELECT 'fk_'||id AS NAME, 'FOREIGN' AS KIND, \"from\" AS COL, \"table\" AS REF, seq+1 AS SEQ " +
+        "SELECT 'fk_'||id AS NAME, 'FOREIGN' AS KIND, \"from\" AS COL, \"table\" AS REF_TABLE, seq+1 AS SEQ " +
         `FROM pragma_foreign_key_list('${tt}') ORDER BY 1, 5`,
     };
   }
@@ -45,7 +45,7 @@ function buildIndexSql(meta, table, schema) {
     return {
       sql:
         "SELECT INDEX_NAME AS NAME, CASE WHEN INDEX_NAME='PRIMARY' THEN 'PRIMARY' WHEN NON_UNIQUE=0 THEN 'UNIQUE' ELSE 'INDEX' END AS KIND, " +
-        "COLUMN_NAME AS COL, '' AS REF, SEQ_IN_INDEX AS SEQ " +
+        "COLUMN_NAME AS COL, '' AS REF_TABLE, SEQ_IN_INDEX AS SEQ " +
         `FROM information_schema.STATISTICS WHERE TABLE_SCHEMA='${q(sc)}' AND TABLE_NAME='${q(t)}' ` +
         "UNION ALL " +
         "SELECT CONSTRAINT_NAME, 'FOREIGN', COLUMN_NAME, CONCAT(REFERENCED_TABLE_NAME, '(', REFERENCED_COLUMN_NAME, ')'), ORDINAL_POSITION " +
@@ -83,7 +83,7 @@ function buildIndexSql(meta, table, schema) {
     return {
       sql:
         "SELECT i.INDEX_NAME AS NAME, CASE WHEN c.CONSTRAINT_TYPE='P' THEN 'PRIMARY' WHEN i.UNIQUENESS='UNIQUE' THEN 'UNIQUE' ELSE 'INDEX' END AS KIND, " +
-        "ic.COLUMN_NAME AS COL, '' AS REF, ic.COLUMN_POSITION AS SEQ " +
+        "ic.COLUMN_NAME AS COL, '' AS REF_TABLE, ic.COLUMN_POSITION AS SEQ " +
         "FROM ALL_INDEXES i " +
         "JOIN ALL_IND_COLUMNS ic ON ic.INDEX_OWNER=i.OWNER AND ic.INDEX_NAME=i.INDEX_NAME " +
         "LEFT JOIN ALL_CONSTRAINTS c ON c.OWNER=i.OWNER AND c.INDEX_NAME=i.INDEX_NAME AND c.CONSTRAINT_TYPE='P' " +
@@ -101,7 +101,7 @@ function buildIndexSql(meta, table, schema) {
     return {
       sql:
         "SELECT i.name AS NAME, CASE WHEN i.is_primary_key=1 THEN 'PRIMARY' WHEN i.is_unique=1 THEN 'UNIQUE' ELSE 'INDEX' END AS KIND, " +
-        "c.name AS COL, '' AS REF, ic.key_ordinal AS SEQ " +
+        "c.name AS COL, '' AS REF_TABLE, ic.key_ordinal AS SEQ " +
         "FROM sys.indexes i " +
         "JOIN sys.index_columns ic ON ic.object_id=i.object_id AND ic.index_id=i.index_id AND ic.is_included_column=0 " +
         "JOIN sys.columns c ON c.object_id=ic.object_id AND c.column_id=ic.column_id " +
@@ -118,7 +118,7 @@ function buildIndexSql(meta, table, schema) {
     return {
       sql:
         "SELECT i.INDNAME AS NAME, CASE WHEN i.UNIQUERULE='P' THEN 'PRIMARY' WHEN i.UNIQUERULE='U' THEN 'UNIQUE' ELSE 'INDEX' END AS KIND, " +
-        "c.COLNAME AS COL, '' AS REF, c.COLSEQ AS SEQ " +
+        "c.COLNAME AS COL, '' AS REF_TABLE, c.COLSEQ AS SEQ " +
         "FROM SYSCAT.INDEXES i JOIN SYSCAT.INDEXCOLUSE c ON c.INDSCHEMA=i.INDSCHEMA AND c.INDNAME=i.INDNAME " +
         `WHERE i.TABNAME='${q(t.toUpperCase())}' AND i.TABSCHEMA='${q(sc.toUpperCase())}' ORDER BY 1, 5`,
     };
@@ -126,7 +126,7 @@ function buildIndexSql(meta, table, schema) {
   if (fam === "clickhouse") {
     return {
       sql:
-        "SELECT 'PRIMARY' AS NAME, 'PRIMARY' AS KIND, primary_key AS COL, '' AS REF, 1 AS SEQ " +
+        "SELECT 'PRIMARY' AS NAME, 'PRIMARY' AS KIND, primary_key AS COL, '' AS REF_TABLE, 1 AS SEQ " +
         `FROM system.tables WHERE database='${q(sc)}' AND name='${q(t)}' ` +
         "UNION ALL " +
         "SELECT name, 'INDEX', expr, '', 1 FROM system.data_skipping_indices " +

@@ -63,6 +63,11 @@ const ACTOR = process.env.JMG_ACTOR || `ai@${os.hostname()}`;
  * 手机号/身份证/口令常常写在 SET 或 WHERE 的值里，原文落盘等于二次泄露。
  */
 const AUDIT_MYSQL = new Set(["mysql", "mariadb", "tidb", "oceanbase", "starrocks", "doris", "goldendb"]);
+function cacheableMeta(text) {
+  // DM 的错误会以 @@ERROR 文本返回（不是异常），不能当成正常结果缓存 10 分钟
+  return Boolean(text) && !/(^|\n)@@ERROR|SQL Execution Failed|查询失败/.test(text);
+}
+
 function auditPreview(sql, dialect) {
   const esc = dialect == null ? true : AUDIT_MYSQL.has(String(dialect).toLowerCase());
   return maskLiterals(String(sql == null ? "" : sql), { backslashEscapes: esc })
@@ -801,7 +806,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "db_indexes",
       description:
-        "查表的主键/唯一键/索引/外键，每列一行（NAME/KIND/COL/REF/SEQ），带 10 分钟缓存。" +
+        "查表的主键/唯一键/索引/外键，每列一行（NAME/KIND/COL/REF_TABLE/SEQ），带 10 分钟缓存。" +
         "支持 SQLite/MySQL 协议族/PG 协议族/达梦/Oracle/SQL Server/DB2/ClickHouse；Trino、H2 不支持。",
       inputSchema: {
         type: "object",
@@ -1010,7 +1015,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         text = one.text;
         via = "一次性";
       }
-      cacheSet(key, text);
+      if (cacheableMeta(text)) cacheSet(key, text);
       const head = `[${conn.name} · ${conn.dialect} · ${args.table} · ${via}]`;
       return { content: [{ type: "text", text: text + String.fromCharCode(10) + head }] };
     } catch (e) {
@@ -1048,7 +1053,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         text = one.text;
         via = "一次性";
       }
-      cacheSet(key, text);
+      if (cacheableMeta(text)) cacheSet(key, text);
       const head = `[${conn.name} · ${conn.dialect} · 索引 ${args.table} · ${via}]`;
       return { content: [{ type: "text", text: text + String.fromCharCode(10) + head }] };
     } catch (e) {
@@ -1085,7 +1090,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         text = one.text;
         via = "一次性";
       }
-      cacheSet(key, text);
+      if (cacheableMeta(text)) cacheSet(key, text);
       const head = `[${conn.name} · ${conn.dialect} · 列名含 "${args.keyword}" · ${via}]`;
       return { content: [{ type: "text", text: text + String.fromCharCode(10) + head }] };
     } catch (e) {

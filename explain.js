@@ -33,12 +33,13 @@ function buildExplainSql(dialect, inner) {
     case "mysql":
       return { sql: `EXPLAIN ${sql}` };
     case "postgresql":
-    case "dm":
     case "clickhouse":
     case "trino":
     case "hive":
     case "h2":
       return { sql: `EXPLAIN ${sql}` };
+    case "dm":
+      return { error: "达梦 JDBC 驱动下 EXPLAIN 不返回结果集，EXPLAIN FOR 又需要非只读事务（本工具默认只读）。请用 DM 管理工具或 disql 查看执行计划。" };
     case "oracle":
       return { error: "Oracle 需要两步：先 EXPLAIN PLAN FOR <sql>，再查 TABLE(DBMS_XPLAN.DISPLAY())。请用 db_query 分两次执行。" };
     case "mssql":
