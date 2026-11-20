@@ -135,6 +135,8 @@ See [examples/](examples/) for more connection templates (MySQL, DM8, Oracle, cu
 | `db_connections` | List configured connections, their dialect/target and write permissions. |
 | `db_dialects` | List supported dialects, driver mapping and the live JVM pool. |
 | `db_schema` | Table columns / types / nullability / comments (DM, MySQL, PG, MSSQL, Oracle, SQLite). |
+| `db_indexes` | Primary / unique / foreign keys and indexes, one row per column (SQLite, MySQL, PG, DM, Oracle, MSSQL, DB2, ClickHouse). |
+| `db_explain` | Execution plan for a read-only statement (SQLite `EXPLAIN QUERY PLAN`; MySQL/PG/DM/ClickHouse/Trino/H2 `EXPLAIN`). Never runs the statement. |
 | `db_search_columns` | Find which table contains a column name (same six families). |
 
 ## CLI (for agents without MCP, or for humans)
@@ -186,6 +188,7 @@ Guard rules (see [docs/security-model.md](docs/security-model.md)):
 |---|---|
 | `dialect` | `dm` `mysql` `postgresql` `mssql` `oracle` `sqlite` `db2` `clickhouse` `trino` `presto` `h2` + aliases (see `db_dialects`) |
 | `host` / `port` / `database` / `user` / `password` | Standard JDBC coordinates |
+| `description` | Optional free text, returned by `db_connections` so an agent can pick a database by meaning |
 | `url` | Optional full JDBC URL (overrides host/port/database) |
 | `driverClass` | Optional; inferred from `dialect` when omitted |
 | `driverJar` | Optional absolute path (or array) to a driver jar |
@@ -229,6 +232,7 @@ Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/rele
 - The write guard is a **lexer-level** checker (comments/literals masked, statement classification) — not a full SQL parser. Do not treat it as a substitute for database-side permissions.
 - Error messages are currently Chinese; English localization is planned.
 - Schema tools cover ten dialect families (DM, MySQL, PostgreSQL, SQL Server, Oracle, SQLite, DB2, ClickHouse, Trino/Presto, H2); any other JDBC database can still be queried with `db_query` (`information_schema` etc.).
+- `db_indexes` covers SQLite / MySQL / PG / DM / Oracle / SQL Server / DB2 / ClickHouse; Trino and H2 expose no index metadata. `db_explain` needs a manual two-step for Oracle / SQL Server / DB2.
 - stdio transport only; HTTP/SSE transport and multi-tenant auth are on the roadmap.
 - `--force`-style escape hatches are intentionally absent: if a write is rejected, fix the SQL or the account permissions.
 

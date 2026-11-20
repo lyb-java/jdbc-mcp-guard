@@ -121,7 +121,7 @@ function runJava(extra) {
   return out;
 }
 
-fs.writeFileSync(CFG, JSON.stringify({ database: { dialect: "sqlite", database: DB_FILE.replace(/\\/g, "/") } }));
+fs.writeFileSync(CFG, JSON.stringify({ database: { dialect: "sqlite", database: DB_FILE.replace(/\\/g, "/"), description: "regress-db" } }));
 let r = runJava(["CREATE TABLE t1 (id INTEGER PRIMARY KEY, name TEXT, v INTEGER)", "--write", "--max-affected", "100"]);
 if (!/COMMITTED=true/.test(r.stdout)) { console.error("建表失败：", r.stderr); process.exit(1); }
 for (let i = 1; i <= 8; i++) runJava([`INSERT INTO t1 (id, name, v) VALUES (${i}, 'row${i}', ${i * 10})`, "--write", "--max-affected", "100"]);
@@ -159,10 +159,12 @@ const isErr = (r) => Boolean(r.result?.isError) || /✗|拒绝|失败|未知连�
   const tools = await req(2, "tools/list", {});
   const names = tools.result.tools.map((t) => t.name);
   check("四个工具都在", ["db_query", "db_connections", "db_dialects", "db_execute"].every((n) => names.includes(n)), names.join(","));
+  check("新工具已注册（db_indexes/db_explain）", ["db_indexes", "db_explain"].every((n) => names.includes(n)), names.join(","));
 
   console.log("== 连接发现 ==");
   const conns = await call(3, "db_connections", {});
   check("测试连接被列出", txt(conns).includes(TAG), txt(conns).slice(0, 120));
+  check("连接描述已透传", txt(conns).includes("regress-db"), txt(conns).slice(0, 160));
   const unknown = await call(4, "db_query", { sql: "SELECT 1", connection: "no-such-conn" });
   check("未知连接有清晰报错", isErr(unknown) && txt(unknown).includes("未知连接"), "");
   check("连接列表标注写权限", /只读|可写/.test(txt(conns)), txt(conns).slice(0, 200));
@@ -185,6 +187,15 @@ const isErr = (r) => Boolean(r.result?.isError) || /✗|拒绝|失败|未知连�
     ["NAME", "TYPE", "NULLABLE", "REMARK"].every((h) => txt(schemaSqlite).includes(h)) && txt(schemaSqlite).includes("| name "),
     txt(schemaSqlite).slice(0, 200)
   );
+
+  const idxSqlite = await call(81, "db_indexes", { connection: TAG, table: "t1" });
+  check("db_indexes(sqlite) 返回主键", /PRIMARY/.test(txt(idxSqlite)) && /NAME/.test(txt(idxSqlite)) && /\| id /.test(txt(idxSqlite)), txt(idxSqlite).slice(0, 200));
+
+  const eqp = await call(82, "db_explain", { connection: TAG, sql: "SELECT * FROM t1 WHERE id = 3" });
+  check("db_explain(sqlite) 返回查询计划", /SCAN|SEARCH/.test(txt(eqp)), txt(eqp).slice(0, 200));
+
+  const badExplain = await call(83, "db_explain", { connection: TAG, sql: "DELETE FROM t1" });
+  check("db_explain 拒绝非只读语句", isErr(badExplain), txt(badExplain).slice(0, 120));
 
   console.log("== 批量查询 ==");
   const b = await call(8, "db_query", { sqls: ["SELECT COUNT(*) AS n FROM t1", "SELECT name FROM t1 WHERE id = 2"], connection: TAG });
@@ -336,6 +347,11 @@ const isErr = (r) => Boolean(r.result?.isError) || /✗|拒绝|失败|未知连�
   const mineRecs = mine.map((l) => { try { return JSON.parse(l); } catch { return {}; } });
   check("审计记录真实 ddl 标记", mineRecs.some((r) => r.ddl === true && r.kind === "ddl" && r.committed === true), "");
   check("被拒写也入审计（kind=rejected）", mineRecs.some((r) => r.kind === "rejected" && r.ok === false), "");
+
+  const secret = "s3cr3t-" + Date.now();
+  await call(84, "db_execute", { sql: `UPDATE t1 SET name = '${secret}' WHERE id = 1`, connection: TAG + "-w", reason: "回归：审计预览必须脱敏", confirm: "YES" });
+  const auditRaw2 = fs.readFileSync(auditPath, "utf8");
+  check("审计预览不落字符串字面量原文", !auditRaw2.includes(secret), "");
 
   srv.kill();
   console.log(`\n== 结果：${pass} PASS / ${fail} FAIL ==`);

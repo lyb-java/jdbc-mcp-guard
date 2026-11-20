@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-11-20
+
+- **New**: `db_indexes` — primary / unique / foreign keys and indexes, one row per column (SQLite, MySQL, PG, DM, Oracle, MSSQL, DB2, ClickHouse).
+- **New**: `db_explain` — dialect-aware execution plan for a read-only statement; refuses DML/DDL and never adds `ANALYZE`.
+- **Security**: the audit `sqlPreview` now masks string literals (`'?'`), so phone numbers / IDs / passwords written in SQL values no longer land in `audit.jsonl`.
+- **UX**: connection files accept `description`, surfaced by `db_connections` so an agent can pick a database by meaning.
+- Regression suite: **61 assertions** (was 55), CLI 7.
+
 ## 0.3.2 — 2026-11-20
 
 - **Fix**: first-run logs no longer print `[db-query]` — the rebrand is complete in driver, audit and fatal-error messages.

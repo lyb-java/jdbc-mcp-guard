@@ -35,6 +35,8 @@ const { tryDaemonQuery, tryDaemonWrite, poolStats } = require("./daemon-path.js"
 const { buildSchemaSql, buildSearchSql, cacheGet, cacheSet, cacheClear, keyOf } = require("./schema-cache.js");
 const { assertWriteSafe, classifyStatement, maskLiterals, FILE_IO } = require("./write-guard.js");
 const { bridgeJarPath } = require("./java-bridge.js");
+const { buildIndexSql } = require("./index-meta.js");
+const { buildExplainSql } = require("./explain.js");
 
 const HOME = os.homedir();
 const JMG_HOME = process.env.JMG_HOME || path.join(HOME, ".jdbc-mcp-guard");
@@ -55,6 +57,21 @@ const SEARCH_MAX_ROWS = 300;
 const SEARCH_TIMEOUT_SEC = 60;
 // 写审计里的操作者标识：优先环境变量（可指向 AI 专用账号），否则 ai@<主机名>
 const ACTOR = process.env.JMG_ACTOR || `ai@${os.hostname()}`;
+
+/**
+ * 审计里的 SQL 预览：保留语句结构、抹掉字符串字面量内容。
+ * 手机号/身份证/口令常常写在 SET 或 WHERE 的值里，原文落盘等于二次泄露。
+ */
+const AUDIT_MYSQL = new Set(["mysql", "mariadb", "tidb", "oceanbase", "starrocks", "doris", "goldendb"]);
+function auditPreview(sql, dialect) {
+  const esc = dialect == null ? true : AUDIT_MYSQL.has(String(dialect).toLowerCase());
+  return maskLiterals(String(sql == null ? "" : sql), { backslashEscapes: esc })
+    .replace(/'\s*'/g, "'?'")
+    .replace(/"\s*"/g, '"?"')
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
+}
 
 const READONLY_KEYWORDS = new Set(["select", "with", "show", "desc", "describe", "explain", "values"]);
 
@@ -449,6 +466,7 @@ function readConnectionMeta(file) {
     port: db.port || "",
     database: db.database || "",
     user: db.user || "",
+    description: String(db.description || db.desc || "").slice(0, 160),
     hasPassword: Boolean(db.password),
     url: db.url || "",
     driverClass: db.driverClass || "",
@@ -620,7 +638,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
       "确认无误后，再调用一次并传 confirm=\"YES\" 才会真正执行。",
       verdict.kind === "destructive" ? "⚠ 这是破坏性操作（DROP/TRUNCATE/DROP COLUMN），数据可能无法恢复。" : "",
     ].filter(Boolean).join(String.fromCharCode(10));
-    auditLog({ at: new Date().toISOString(), connection: conn.name, dialect: conn.dialect, target: `${conn.host}:${conn.port}/${conn.database}`, actor: ACTOR, sqlSha256: require("crypto").createHash("sha256").update(sql).digest("hex"), sqlPreview: String(sql).replace(/\s+/g, " ").slice(0, 300), reason: String(reason), affected: null, committed: false, ddl: true, kind: verdict.kind, ok: true, note: "dry-run (not executed)" });
+    auditLog({ at: new Date().toISOString(), connection: conn.name, dialect: conn.dialect, target: `${conn.host}:${conn.port}/${conn.database}`, actor: ACTOR, sqlSha256: require("crypto").createHash("sha256").update(sql).digest("hex"), sqlPreview: auditPreview(sql, conn.dialect), reason: String(reason), affected: null, committed: false, ddl: true, kind: verdict.kind, ok: true, note: "dry-run (not executed)" });
     return { content: [{ type: "text", text: text + auditNote() }] };
   }
 
@@ -642,7 +660,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
   }
   if (fast && (fast.committed !== undefined || fast.aborted)) {
     const whead = `[${conn.name} · 影响 ${fast.affected} 行 · ${fast.committed ? "已提交" : fast.aborted ? "已回滚（超上限）" : "预演未提交"} · 上限 ${wCap} · 常驻]`;
-    auditLog({ at: new Date().toISOString(), connection: conn.name, dialect: conn.dialect, target: `${conn.host}:${conn.port}/${conn.database}`, actor: ACTOR, sqlSha256: require("crypto").createHash("sha256").update(sql).digest("hex"), sqlPreview: sql.replace(/\s+/g, " ").slice(0, 300), reason: String(reason), affected: fast.affected, committed: fast.committed, aborted: Boolean(fast.aborted), ddl: isDdl, kind: verdict.kind, ok: true });
+    auditLog({ at: new Date().toISOString(), connection: conn.name, dialect: conn.dialect, target: `${conn.host}:${conn.port}/${conn.database}`, actor: ACTOR, sqlSha256: require("crypto").createHash("sha256").update(sql).digest("hex"), sqlPreview: auditPreview(sql, conn.dialect), reason: String(reason), affected: fast.affected, committed: fast.committed, aborted: Boolean(fast.aborted), ddl: isDdl, kind: verdict.kind, ok: true });
     // P1-1：DDL 提交后 schema 缓存必须失效（否则 db_schema 最长脏 10 分钟）
     if (fast.committed && isDdl) {
       cacheClear(verdict.kind === "destructive" ? undefined : conn.name);
@@ -692,7 +710,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
         target: `${conn.host}:${conn.port}/${conn.database}`,
         actor: ACTOR,
         sqlSha256: require("crypto").createHash("sha256").update(sql).digest("hex"),
-        sqlPreview: sql.replace(/\s+/g, " ").slice(0, 300),
+        sqlPreview: auditPreview(sql, conn.dialect),
         reason: String(reason),
         affected,
         committed,
@@ -768,7 +786,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: "db_schema",
-      description: "查表结构（列名/类型/可空/注释），带 10 分钟本地缓存；支持达梦/MySQL/PG/MSSQL/Oracle/SQLite/DB2/ClickHouse/Trino(Presto)/H2。比手写 information_schema 快且省 token。",
+      description: "查表结构（列名/类型/可空/注释），带 10 分钟本地缓存；支持达梦/MySQL/PG/MSSQL/Oracle/SQLite/DB2/ClickHouse/Trino(Presto)/H2。主键/唯一键/索引/外键请用 db_indexes。",
       inputSchema: {
         type: "object",
         properties: {
@@ -778,6 +796,38 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           refresh: { type: "boolean", description: "跳过缓存强制刷新" },
         },
         required: ["table"],
+      },
+    },
+    {
+      name: "db_indexes",
+      description:
+        "查表的主键/唯一键/索引/外键，每列一行（NAME/KIND/COL/REF/SEQ），带 10 分钟缓存。" +
+        "支持 SQLite/MySQL 协议族/PG 协议族/达梦/Oracle/SQL Server/DB2/ClickHouse；Trino、H2 不支持。",
+      inputSchema: {
+        type: "object",
+        properties: {
+          table: { type: "string", description: "表名" },
+          schema: { type: "string", description: "schema/owner（默认取连接配置的 database）" },
+          connection: { type: "string", description: "连接名，默认 default" },
+          refresh: { type: "boolean", description: "跳过缓存强制刷新" },
+        },
+        required: ["table"],
+      },
+    },
+    {
+      name: "db_explain",
+      description:
+        "执行计划：把一条只读 SQL 包成方言对应的 EXPLAIN 返回（SQLite=EXPLAIN QUERY PLAN；MySQL/PG/达梦/ClickHouse/Trino/H2/Hive=EXPLAIN）。" +
+        "只读：不会执行原语句，也不会加 ANALYZE。Oracle/SQL Server/DB2 需两步，暂不封装，请用 db_query 手工执行。",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sql: { type: "string", description: "要分析的只读 SQL（单条）" },
+          connection: { type: "string", description: "连接名，默认 default" },
+          maxRows: { type: "number", description: `计划行数上限，默认 ${MAX_ROWS_DEFAULT}` },
+          timeout: { type: "number", description: "语句超时秒数，默认 60" },
+        },
+        required: ["sql"],
       },
     },
     {
@@ -834,7 +884,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const drv = driver.missing ? `⚠ ${driver.reason}` : `驱动 ${driver.source}`;
       const target = c.url ? c.url : c.host ? `${c.dialect} ${c.host}:${c.port}/${c.database}` : `${c.dialect} ${c.database || "(未指定库)"}`;
       const grant = c.allowDestructive ? "⚠可写+DDL+破坏性" : c.allowDdl ? "⚠可写+DDL" : c.allowWrite ? "⚠可写" : "只读";
-      lines.push(`- ${c.name}: ${target} (user=${c.user}${c.hasPassword ? "" : "，⚠无密码"}) · ${grant} · ${drv}`);
+      lines.push(`- ${c.name}: ${target} (user=${c.user}${c.hasPassword ? "" : "，⚠无密码"})${c.description ? " · " + c.description : ""} · ${grant} · ${drv}`);
     }
     return { content: [{ type: "text", text: `可用连接：\n${lines.join("\n")}\n\n配置目录：${DB_DIR}` }] };
   }
@@ -907,6 +957,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
   }
 
+  if (name === "db_explain") {
+    if (!args.sql) return { isError: true, content: [{ type: "text", text: "缺少 sql 参数。" }] };
+    try {
+      const conn = resolveConnection(args.connection);
+      // 内层语句先过只读守卫：防止 EXPLAIN 包住 DML/DDL，也挡住多语句
+      assertReadOnly(String(args.sql), conn.dialect);
+      const spec = buildExplainSql(conn.dialect, args.sql);
+      if (spec.error) return { isError: true, content: [{ type: "text", text: spec.error }] };
+      const res = await runQuery({
+        sql: spec.sql,
+        connection: conn.name,
+        maxRows: args.maxRows ?? MAX_ROWS_DEFAULT,
+        timeout: args.timeout ?? 60,
+        format: "table",
+      });
+      if (spec.note) (res.content || []).push({ type: "text", text: spec.note });
+      return res;
+    } catch (error) {
+      return { isError: true, content: [{ type: "text", text: error.message }] };
+    }
+  }
+
   if (name === "db_schema") {
     if (!args.table) return { isError: true, content: [{ type: "text", text: "缺少 table 参数。" }] };
     try {
@@ -940,6 +1012,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       cacheSet(key, text);
       const head = `[${conn.name} · ${conn.dialect} · ${args.table} · ${via}]`;
+      return { content: [{ type: "text", text: text + String.fromCharCode(10) + head }] };
+    } catch (e) {
+      return { isError: true, content: [{ type: "text", text: e.message }] };
+    }
+  }
+
+  if (name === "db_indexes") {
+    if (!args.table) return { isError: true, content: [{ type: "text", text: "缺少 table 参数。" }] };
+    try {
+      const conn = resolveConnection(args.connection);
+      const key = keyOf(conn.name, conn.dialect, "__idx__" + (args.schema || conn.database || "") + "." + args.table);
+      if (!args.refresh) {
+        const hit = cacheGet(key);
+        if (hit) return { content: [{ type: "text", text: `（缓存命中）` + String.fromCharCode(10) + hit }] };
+      }
+      const spec = buildIndexSql(conn, args.table, args.schema);
+      if (spec.error) return { isError: true, content: [{ type: "text", text: spec.error }] };
+      const settings = driverSettings();
+      const driver = await resolveDriver(conn, settings, true);
+      if (driver.missing) throw new Error(`连接 "${conn.name}" 缺少驱动：${driver.reason}`);
+      let fast = null;
+      try {
+        fast = await tryDaemonQuery(conn, driver, { sql: spec.sql, maxRows: SCHEMA_MAX_ROWS, timeout: SCHEMA_TIMEOUT_SEC, format: "table" });
+      } catch (e) {
+        fast = { error: String(e.message || e) };
+      }
+      let text = (fast && fast.text) || "";
+      let via = "常驻";
+      if (!text) {
+        const one = await runOneShot(conn, driver, { sql: spec.sql, rows: SCHEMA_MAX_ROWS, timeout: SCHEMA_TIMEOUT_SEC, format: "table" });
+        if (one.error) {
+          return { isError: true, content: [{ type: "text", text: `查询失败：${(fast && fast.error) ? fast.error + "；一次性进程：" : "daemon 不可用，一次性进程："}${one.error}` }] };
+        }
+        text = one.text;
+        via = "一次性";
+      }
+      cacheSet(key, text);
+      const head = `[${conn.name} · ${conn.dialect} · 索引 ${args.table} · ${via}]`;
       return { content: [{ type: "text", text: text + String.fromCharCode(10) + head }] };
     } catch (e) {
       return { isError: true, content: [{ type: "text", text: e.message }] };
@@ -1000,7 +1110,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         connection: String(args.connection || "default"),
         actor: ACTOR,
         sqlSha256: crypto.createHash("sha256").update(String(args.sql || "")).digest("hex"),
-        sqlPreview: String(args.sql || "").replace(/\s+/g, " ").slice(0, 300),
+        sqlPreview: auditPreview(args.sql, null),
         reason: String(args.reason || ""),
         affected: null,
         committed: false,

@@ -62,6 +62,7 @@ mkdir -p ~/.jdbc-mcp-guard/connections
     "host": "127.0.0.1",
     "port": 3306,
     "database": "app",
+    "description": "核心业务库（示例）",
     "user": "app_user",
     "password": "REPLACE_ME",
     "allowWrite": false
@@ -94,6 +95,8 @@ MCP 客户端配置：
 | `db_connections` | 列出连接、目标与写权限 |
 | `db_dialects` | 方言/驱动映射与常驻 JVM 池 |
 | `db_schema` | 表结构（达梦/MySQL/PG/MSSQL/Oracle/SQLite/DB2/ClickHouse/Trino/Presto/H2） |
+| `db_indexes` | 主键/唯一键/索引/外键，一列一行（SQLite/MySQL/PG/达梦/Oracle/SQL Server/DB2/ClickHouse） |
+| `db_explain` | 只读 SQL 的执行计划（SQLite 用 `EXPLAIN QUERY PLAN`，其余用 `EXPLAIN`）；不会执行原语句 |
 | `db_search_columns` | 按列名找表（同上六族） |
 
 ## 安全模型
@@ -119,7 +122,7 @@ MCP 客户端配置：
 
 ```bash
 npm install
-npm test    # 55 项断言，SQLite + H2，不需要外部数据库
+npm test    # 61 项断言，SQLite + H2，不需要外部数据库
 ```
 
 ## 限制

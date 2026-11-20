@@ -12,7 +12,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
-COPY server.js write-guard.js java-runner.js daemon-path.js schema-cache.js java-bridge.js ./
+COPY server.js write-guard.js java-runner.js daemon-path.js schema-cache.js java-bridge.js index-meta.js explain.js ./
 COPY db/ ./db/
 COPY examples/ ./examples/
 COPY docs/ ./docs/

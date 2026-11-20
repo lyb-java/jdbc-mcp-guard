@@ -1,6 +1,6 @@
 {
   "name": "jdbc-mcp-guard",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "MCP gateway for any JDBC database: read-only queries, tiered writes (DML / DDL / destructive), full audit. Works with DM, MySQL, PostgreSQL, Oracle, SQL Server, Kingbase, openGauss, OceanBase, ClickHouse, DB2 and any JDBC driver.",
   "mcpName": "io.github.lyb-java/jdbc-mcp-guard",
   "license": "MIT",
@@ -17,6 +17,8 @@
     "daemon-path.js",
     "schema-cache.js",
     "java-bridge.js",
+    "index-meta.js",
+    "explain.js",
     "db/",
     "examples/",
     "docs/",
