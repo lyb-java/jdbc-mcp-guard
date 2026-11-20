@@ -502,7 +502,7 @@ function runOneShot(conn, driver, { sql, batch, rows, timeout, format }) {
   const tmp = path.join(os.tmpdir(), `dbq-${process.pid}-${Date.now()}.sql`);
   fs.writeFileSync(tmp, batch ? batch.join("\n--@@BATCH_SPLIT@@--\n") : sql, "utf8");
 
-  const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "java.exe") : "java";
+  const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "java.exe" : "java") : "java";
   const args = ["-Dfile.encoding=UTF-8", "-cp", cp, "DbQuery", "--file", tmp, "--config", conn.file, "--max-rows", String(rows)];
   if (batch) args.push("--multi");
   if (format === "json") args.push("--json");
@@ -675,7 +675,7 @@ async function runWrite({ sql, connection, reason, confirm, maxAffected, timeout
   ];
   if (!commit) args.push("--dry-run");
 
-  const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "java.exe") : "java";
+  const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "java.exe" : "java") : "java";
   return new Promise((resolve) => {
     execFile(java, args, { encoding: "utf8", windowsHide: true, timeout: 150000, maxBuffer: 16 << 20 }, (error, stdout, stderr) => {
       fs.unlink(tmp, () => {});

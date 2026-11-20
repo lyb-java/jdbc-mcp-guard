@@ -42,7 +42,7 @@ function compileIfNeeded() {
     /* 需要编译 */
   }
   fs.mkdirSync(CLASS_CACHE, { recursive: true });
-  const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "javac.exe") : "javac";
+  const javac = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "javac.exe" : "javac") : "javac";
   execFileSync(javac, ["-encoding", "UTF-8", "-d", CLASS_CACHE, DAEMON_SRC], { stdio: "pipe", windowsHide: true, timeout: 60000 });
 }
 
@@ -144,7 +144,7 @@ class Daemon {
 
   _spawn() {
     compileIfNeeded();
-    const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", "java.exe") : "java";
+    const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, "bin", process.platform === "win32" ? "java.exe" : "java") : "java";
     const child = spawn(java, ["-Dfile.encoding=UTF-8", "-cp", this.classpath, "DbQueryDaemon"], {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
